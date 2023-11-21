@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "robusta_playbooks"
+name = "custom_robusta_playbooks"
 version = "0.0.1"
 description = ""
 authors = ["Taras Dev <taras@uinno.io>"]
