@@ -11,7 +11,7 @@ from kubernetes import client, config
 
 class CheckHpaLimitParams(ActionParams):
     hpa_names: List[str]  # Names of HPAs to monitor
-    namespace: str        # Namespace where HPAs are located
+    namespace: str  # Namespace where HPAs are located
 
 
 class CheckPodReadyParams(ActionParams):
@@ -93,6 +93,7 @@ def check_hpa_limits(event: ExecutionBaseEvent, params: CheckHpaLimitParams):
                     title=f"HPA Limit Reached for {hpa_name}",
                     severity=FindingSeverity.HIGH,
                     source=FindingSource.NONE,
+                    aggregation_key=f"Hpa limit reached {hpa_name}",
                     description=f"The HPA {hpa_name} in namespace {params.namespace} has reached its maximum limit of {max_replicas} replicas."
                 )
             )
