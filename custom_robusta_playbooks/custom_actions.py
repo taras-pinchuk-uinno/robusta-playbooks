@@ -6,6 +6,12 @@ from robusta.core.reporting.base import (
     FindingSource,
 )
 from hikaru.model.rel_1_26 import *
+from kubernetes import client, config
+
+
+class CheckHpaLimitParams(ActionParams):
+    hpa_names: List[str]  # Names of HPAs to monitor
+    namespace: str        # Namespace where HPAs are located
 
 
 class CheckPodReadyParams(ActionParams):
@@ -66,5 +72,27 @@ def check_pod_ready_kube_event(event: EventChangeEvent, params: CheckPodReadyPar
                     source=FindingSource.NONE,
                     aggregation_key=f"Custom Event {prefix}",
                     description=f"No ready pods left with prefix {prefix}"
+                )
+            )
+
+
+@action
+def check_hpa_limits(event: ExecutionBaseEvent, params: CheckHpaLimitParams):
+    config.load_incluster_config()
+    v1 = client.AutoscalingV1Api()
+
+    for hpa_name in params.hpa_names:
+        hpa = v1.read_namespaced_horizontal_pod_autoscaler(hpa_name, params.namespace)
+        current_replicas = hpa.status.current_replicas
+        max_replicas = hpa.spec.max_replicas
+
+        # Check if current replicas are equal to max replicas
+        if current_replicas >= max_replicas:
+            event.add_finding(
+                Finding(
+                    title=f"HPA Limit Reached for {hpa_name}",
+                    severity=FindingSeverity.HIGH,
+                    source=FindingSource.NONE,
+                    description=f"The HPA {hpa_name} in namespace {params.namespace} has reached its maximum limit of {max_replicas} replicas."
                 )
             )
